@@ -1,18 +1,21 @@
 var fs = require("fs");
 var path = require("path");
 
-fs.readdir(path.join(__dirname, "lib"), function(err, filenames) {
-  if (err) throw err;
+const COUNTING_METHOD_NAMES = [ "fptp", "ir" ];
 
-  for (let i = 0; i < filenames.length; i++) {
-    var filename = filenames[i];
-    var fileExtension = filename.substring(filename.length - 3).toLowerCase();
-    var filenameNoExtension = filename.substring(0, filename.length - 3);
+var countingMethods = {};
 
-    if (fileExtension === ".js") {
-      module.exports[filenameNoExtension] = require(path.join(__dirname, "lib", filename)).count;
-    }
+for (let i = 0; i < COUNTING_METHOD_NAMES.length; i++) {
+  var name = COUNTING_METHOD_NAMES[i];
+  var filePath = path.join(__dirname, "lib", `${name}.js`);
+
+  countingMethods[name] = require(filePath).count;
+}
+
+module.exports.count = function(countingMethod, candidatesCount, ballots) {
+  if (countingMethods.hasOwnProperty(countingMethod) === true) {
+    return countingMethods[countingMethod](candidatesCount, ballots);
+  } else {
+    throw new ReferenceError();
   }
-});
-
-module.exports.libDir = function() { return path.join(__dirname, "lib") };
+}
